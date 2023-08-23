@@ -4,15 +4,15 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
-	"net/url"
+	"github.com/leogps/kollector/consts"
 	"os"
 	"sync"
 
 	"github.com/armosec/utils-k8s-go/armometadata"
 	"github.com/kubescape/k8s-interface/k8sinterface"
-	"github.com/kubescape/kollector/consts"
 	restclient "k8s.io/client-go/rest"
 
+	beClientV1 "github.com/kubescape/backend/pkg/client/v1"
 	apixv1beta1client "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
@@ -138,18 +138,13 @@ func CreateWatchHandler(config *armometadata.ClusterConfig) (*WatchHandler, erro
 		return nil, fmt.Errorf("apiV1beta1client.NewForConfig failed: %s", err.Error())
 	}
 
-	var erURL *url.URL
-	var websocketHandler *WebSocketHandler
-	if config.EventReceiverWebsocketURL != "" {
-		erURL, err = setWebSocketURL(config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
-		}
-		websocketHandler = createWebSocketHandler(erURL)
+	erURL, err := beClientV1.GetReporterClusterReportsWebsocketUrl(config.EventReceiverWebsocketURL, config.AccountID, config.ClusterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
 	}
 
 	result := WatchHandler{RestAPIClient: k8sAPiObj.KubernetesClient,
-		WebSocketHandle:  websocketHandler,
+		WebSocketHandle:  createWebSocketHandler(erURL),
 		extensionsClient: extensionsClientSet,
 		K8sApi:           k8sinterface.NewKubernetesApi(),
 		pdm:              make(map[int]*list.List),
