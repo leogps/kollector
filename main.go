@@ -69,9 +69,13 @@ func main() {
 		logger.L().Ctx(ctx).Fatal("failed to initialize the WatchHandler", helpers.Error(err))
 	}
 
+	websocketEventProcessor := watch.WebSocketProcessor{
+		WatchHandler: wh,
+	}
+
 	go func() {
 		for {
-			wh.ListenerAndSender(ctx)
+			wh.ListenAndProcess(ctx, &websocketEventProcessor)
 		}
 	}()
 

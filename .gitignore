@@ -3,4 +3,5 @@
 main
 dist/*
 .vscode/
+.idea/
 kollector
