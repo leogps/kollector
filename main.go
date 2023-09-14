@@ -4,23 +4,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/kubescape/backend/pkg/utils"
+	"github.com/leogps/kollector/config"
 	"net/url"
 	"os"
 
 	"github.com/kubescape/backend/pkg/servicediscovery"
 	v1 "github.com/kubescape/backend/pkg/servicediscovery/v1"
-	"github.com/kubescape/backend/pkg/utils"
 	logger "github.com/kubescape/go-logger"
 	"github.com/kubescape/go-logger/helpers"
 
-<<<<<<< HEAD
 	"github.com/leogps/kollector/consts"
 	"github.com/leogps/kollector/watch"
-=======
-	"github.com/kubescape/kollector/config"
-	"github.com/kubescape/kollector/consts"
-	"github.com/kubescape/kollector/watch"
->>>>>>> 111acd5 (Support backend access key (#45))
 
 	"github.com/armosec/utils-k8s-go/armometadata"
 	"github.com/armosec/utils-k8s-go/probes"
