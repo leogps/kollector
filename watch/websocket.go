@@ -142,32 +142,6 @@ func (wh *WatchHandler) SendMessageToWebSocket(jsonData []byte) {
 	wh.WebSocketHandle.data <- data
 }
 
-// ListenerAndSender listen for changes in cluster and send reports to websocket
-func (wh *WatchHandler) ListenerAndSender(ctx context.Context) {
-	defer func() {
-		if err := recover(); err != nil {
-			logger.L().Ctx(ctx).Error("RECOVER ListenerAndSender", helpers.Interface("error", err), helpers.String("stack", string(debug.Stack())))
-		}
-	}()
-	wh.SetFirstReportFlag(true)
-	for {
-		jsonData := prepareDataToSend(ctx, wh)
-		if jsonData == nil || isEmptyFirstReport(jsonData) {
-			continue // skip (ususally first) report in case it is empty
-		}
-		if jsonData != nil {
-			logger.L().Ctx(ctx).Debug("sending report to websocket", helpers.String("report", string(jsonData)))
-			wh.SendMessageToWebSocket(jsonData)
-		}
-		if wh.getFirstReportFlag() {
-			wh.SetFirstReportFlag(false)
-		}
-		if WaitTillNewDataArrived(wh) {
-			continue
-		}
-	}
-}
-
 func (wsh *WebSocketHandler) setPingPongHandler(ctx context.Context, conn *websocket.Conn) {
 	end := false
 	timeout := 10 * time.Second
@@ -240,4 +214,12 @@ func getNumericValueFromEnvVar(envVar string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+type WebSocketProcessor struct {
+	WatchHandler *WatchHandler
+}
+
+func (wsh *WebSocketProcessor) ProcessEventData(data []byte) {
+	wsh.WatchHandler.SendMessageToWebSocket(data)
 }

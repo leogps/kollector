@@ -4,6 +4,7 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"sync"
 
@@ -137,13 +138,18 @@ func CreateWatchHandler(config *armometadata.ClusterConfig) (*WatchHandler, erro
 		return nil, fmt.Errorf("apiV1beta1client.NewForConfig failed: %s", err.Error())
 	}
 
-	erURL, err := setWebSocketURL(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+	var erURL *url.URL
+	var websocketHandler *WebSocketHandler
+	if config.EventReceiverWebsocketURL != "" {
+		erURL, err = setWebSocketURL(config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+		}
+		websocketHandler = createWebSocketHandler(erURL)
 	}
 
 	result := WatchHandler{RestAPIClient: k8sAPiObj.KubernetesClient,
-		WebSocketHandle:  createWebSocketHandler(erURL),
+		WebSocketHandle:  websocketHandler,
 		extensionsClient: extensionsClientSet,
 		K8sApi:           k8sinterface.NewKubernetesApi(),
 		pdm:              make(map[int]*list.List),
