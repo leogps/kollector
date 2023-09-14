@@ -4,13 +4,15 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
-	"github.com/leogps/kollector/config"
-	"github.com/leogps/kollector/consts"
+	"github.com/kubescape/go-logger"
+	"github.com/kubescape/go-logger/helpers"
+	"net/url"
 	"os"
 	"sync"
 
 	"github.com/kubescape/k8s-interface/k8sinterface"
-
+	"github.com/leogps/kollector/config"
+	"github.com/leogps/kollector/consts"
 	restclient "k8s.io/client-go/rest"
 
 	beClientV1 "github.com/kubescape/backend/pkg/client/v1"
@@ -122,6 +124,20 @@ type WatchHandler struct {
 	notifyUpdates iClusterNotifier // notify other (in-cluster) components about new data
 }
 
+func (wh *WatchHandler) CheckInstanceMetadataAPIVendor() string {
+	res, _ := getInstanceMetadata()
+	return res
+}
+
+func (wh *WatchHandler) ClusterVersion() *version.Info {
+	serverVersion, err := wh.RestAPIClient.Discovery().ServerVersion()
+	if err != nil {
+		serverVersion = &version.Info{GitVersion: "Unknown"}
+	}
+	logger.L().Info("K8s API version", helpers.Interface("version", serverVersion))
+	return serverVersion
+}
+
 func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
 
 	componentNamespace := os.Getenv(consts.NamespaceEnvironmentVariable)
@@ -139,25 +155,28 @@ func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
 		return nil, fmt.Errorf("apiV1beta1client.NewForConfig failed: %s", err.Error())
 	}
 
-	erURL, err := beClientV1.GetReporterClusterReportsWebsocketUrl(config.EventReceiverWebsocketURL(), config.AccountID(), config.ClusterName())
-	if err != nil {
-		return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+	var erURL *url.URL
+	var websocketHandler *WebSocketHandler
+	if config.EventReceiverWebsocketURL() != "" {
+		erURL, err = beClientV1.GetReporterClusterReportsWebsocketUrl(config.EventReceiverWebsocketURL(), config.AccountID(), config.ClusterName())
+		if err != nil {
+			return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+		}
+		websocketHandler = createWebSocketHandler(erURL, config.AccessKey())
 	}
 
 	result := WatchHandler{RestAPIClient: k8sAPiObj.KubernetesClient,
-		WebSocketHandle:  createWebSocketHandler(erURL, config.AccessKey()),
-		extensionsClient: extensionsClientSet,
-		K8sApi:           k8sinterface.NewKubernetesApi(),
-		pdm:              make(map[int]*list.List),
-		ndm:              make(map[int]*list.List),
-		sdm:              make(map[int]*list.List),
-		cjm:              make(map[int]*list.List),
-		config:           config,
-		secretdm:         newResourceMap(),
-		namespacedm:      newResourceMap(),
-		jsonReport: jsonFormat{
-			FirstReport: true,
-		},
+		WebSocketHandle:        websocketHandler,
+		extensionsClient:       extensionsClientSet,
+		K8sApi:                 k8sinterface.NewKubernetesApi(),
+		pdm:                    make(map[int]*list.List),
+		ndm:                    make(map[int]*list.List),
+		sdm:                    make(map[int]*list.List),
+		cjm:                    make(map[int]*list.List),
+		config:                 config,
+		secretdm:               newResourceMap(),
+		namespacedm:            newResourceMap(),
+		jsonReport:             NewJsonFormat(),
 		informNewDataChannel:   make(chan int),
 		aggregateFirstDataFlag: true,
 		includeNamespaces:      []string{componentNamespace}, // ignore only the component namespace

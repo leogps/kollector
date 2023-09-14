@@ -13,8 +13,8 @@ import (
 	"github.com/armosec/utils-go/boolutils"
 	logger "github.com/kubescape/go-logger"
 	"github.com/kubescape/go-logger/helpers"
-	"github.com/kubescape/kollector/config"
-	"github.com/kubescape/kollector/consts"
+	"github.com/leogps/kollector/config"
+	"github.com/leogps/kollector/consts"
 )
 
 var defaultClientInClusterTrigger = http.DefaultClient

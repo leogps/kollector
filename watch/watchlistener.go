@@ -14,13 +14,15 @@ func (wh *WatchHandler) ListenAndProcess(ctx context.Context, processor EventPro
 		}
 	}()
 	wh.SetFirstReportFlag(true)
+
 	for {
+		logger.L().Ctx(ctx).Info("for loop...")
 		jsonData := prepareDataToSend(ctx, wh)
 		if jsonData == nil || isEmptyFirstReport(jsonData) {
 			continue // skip (usually first) report in case it is empty
 		}
 		if jsonData != nil {
-			logger.L().Ctx(ctx).Debug("sending report to websocket", helpers.String("report", string(jsonData)))
+			logger.L().Ctx(ctx).Debug("processing report", helpers.String("report", string(jsonData)))
 			processor.ProcessEventData(jsonData)
 		}
 		if wh.getFirstReportFlag() {
