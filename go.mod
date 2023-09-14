@@ -1,4 +1,4 @@
-module github.com/kubescape/kollector
+module github.com/leogps/kollector
 
 go 1.20
 
@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/kubescape/go-logger v0.0.13
 	github.com/kubescape/k8s-interface v0.0.134
+	github.com/kubescape/kollector v0.1.24
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
 	golang.org/x/net v0.12.0

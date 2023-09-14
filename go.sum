@@ -233,6 +233,8 @@ github.com/kubescape/go-logger v0.0.13 h1:Rio+grBhpcdExZIVT+HcBVcgbvwrU/aVSV99iK
 github.com/kubescape/go-logger v0.0.13/go.mod h1:Tod++iNn5kofkhjpfwjUrqie2YHkLZNoH0Pq0+KldMo=
 github.com/kubescape/k8s-interface v0.0.134 h1:dbXNGM0GH+xj8NadMu5pp1ZPFR90E+62DvWnyU0bdnA=
 github.com/kubescape/k8s-interface v0.0.134/go.mod h1:JHRoGqyMJaALx9mVXfYhOnCDxlEAn9Aw8EIqZOFED80=
+github.com/kubescape/kollector v0.1.24 h1:ldKNXP//RvXNQ3ODGbw5xt/FZCCgRoqnCY06pnF60SY=
+github.com/kubescape/kollector v0.1.24/go.mod h1:9r3m0G3E1GwN91AnhaeNStpPWsF01cvvdOl92a/Sv4g=
 github.com/lunixbochs/vtclean v1.0.0/go.mod h1:pHhQNgMf3btfWnGBVipUOjRYhoOsdGqdm/+2c2E2WMI=
 github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
