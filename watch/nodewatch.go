@@ -2,6 +2,7 @@ package watch
 
 import (
 	"container/list"
+	"k8s.io/apimachinery/pkg/types"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -18,12 +19,14 @@ import (
 type NodeData struct {
 	// core.NodeSystemInfo
 	core.NodeStatus `json:",inline"`
-	Name            string `json:"name"`
+	Name            string    `json:"name"`
+	UID             types.UID `json:"uid"`
 }
 
 func (updateNode *NodeData) UpdateNodeData(node *core.Node) {
 	updateNode.Name = node.ObjectMeta.Name
 	updateNode.NodeStatus = node.Status
+	updateNode.UID = node.ObjectMeta.UID
 }
 
 func UpdateNode(node *core.Node, ndm map[int]*list.List) *NodeData {
@@ -126,7 +129,9 @@ func (wh *WatchHandler) handleNodeWatch(nodesWatcher watch.Interface, newStateCh
 				if wh.ndm[id] == nil {
 					wh.ndm[id] = list.New()
 				}
-				nd := &NodeData{Name: node.ObjectMeta.Name,
+				nd := &NodeData{
+					UID:        node.ObjectMeta.UID,
+					Name:       node.ObjectMeta.Name,
 					NodeStatus: node.Status,
 				}
 				wh.ndm[id].PushBack(nd)
