@@ -48,6 +48,7 @@ type MicroServiceData struct {
 
 type PodDataForExistMicroService struct {
 	UID               types.UID               `json:"uid"`
+	ResourceVersion   string                  `json:"resourceVersion"`
 	PodName           string                  `json:"podName"`
 	NodeName          string                  `json:"nodeName"`
 	PodIP             string                  `json:"podIP"`
@@ -237,11 +238,12 @@ func (wh *WatchHandler) handlePodWatch(ctx context.Context, podsWatcher watch.In
 			}
 
 			newPod := PodDataForExistMicroService{
-				UID:       pod.ObjectMeta.UID,
-				PodName:   podName,
-				NodeName:  pod.Spec.NodeName,
-				PodIP:     pod.Status.PodIP,
-				Namespace: pod.ObjectMeta.Namespace,
+				UID:             pod.ObjectMeta.UID,
+				ResourceVersion: pod.ResourceVersion,
+				PodName:         podName,
+				NodeName:        pod.Spec.NodeName,
+				PodIP:           pod.Status.PodIP,
+				Namespace:       pod.ObjectMeta.Namespace,
 				Owner: OwnerDetNameAndKindOnly{
 					Name: od.Name,
 					Kind: od.Kind,
@@ -377,7 +379,7 @@ func (wh *WatchHandler) DeletePod(ctx context.Context, pod *core.Pod, podName st
 		return
 	}
 	logger.L().Ctx(ctx).Debug("Pod Deleted", helpers.String("name", podName), helpers.String("status", podStatus), helpers.String("namespace", pod.Namespace), helpers.String("node", pod.Spec.NodeName))
-	np := PodDataForExistMicroService{UID: pod.ObjectMeta.UID, PodName: pod.ObjectMeta.Name, NodeName: pod.Spec.NodeName, PodIP: pod.Status.PodIP, Namespace: pod.ObjectMeta.Namespace, Owner: OwnerDetNameAndKindOnly{Name: owner.Name, Kind: owner.Kind}, PodStatus: podStatus, CreationTimestamp: pod.CreationTimestamp.Time.UTC().Format(time.RFC3339)}
+	np := PodDataForExistMicroService{UID: pod.ObjectMeta.UID, ResourceVersion: pod.ResourceVersion, PodName: pod.ObjectMeta.Name, NodeName: pod.Spec.NodeName, PodIP: pod.Status.PodIP, Namespace: pod.ObjectMeta.Namespace, Owner: OwnerDetNameAndKindOnly{Name: owner.Name, Kind: owner.Kind}, PodStatus: podStatus, CreationTimestamp: pod.CreationTimestamp.Time.UTC().Format(time.RFC3339)}
 	if pod.DeletionTimestamp != nil {
 		np.DeletionTimestamp = pod.DeletionTimestamp.Time.UTC().Format(time.RFC3339)
 	}
@@ -675,7 +677,7 @@ func (wh *WatchHandler) updatePod(pod *core.Pod, pdm map[int]*list.List, podStat
 				} else {
 					id = -1
 				}
-				podDataForExistMicroService = PodDataForExistMicroService{UID: pod.ObjectMeta.UID, PodName: pod.ObjectMeta.Name, NodeName: pod.Spec.NodeName, PodIP: pod.Status.PodIP, Namespace: pod.ObjectMeta.Namespace, PodStatus: podStatus, CreationTimestamp: pod.CreationTimestamp.Time.UTC().Format(time.RFC3339)}
+				podDataForExistMicroService = PodDataForExistMicroService{UID: pod.ObjectMeta.UID, ResourceVersion: pod.ResourceVersion, PodName: pod.ObjectMeta.Name, NodeName: pod.Spec.NodeName, PodIP: pod.Status.PodIP, Namespace: pod.ObjectMeta.Namespace, PodStatus: podStatus, CreationTimestamp: pod.CreationTimestamp.Time.UTC().Format(time.RFC3339)}
 
 				DeepCopy(element.Value.(PodDataForExistMicroService).Owner, &podDataForExistMicroService.Owner)
 				DeepCopyObj(podDataForExistMicroService, element.Value.(PodDataForExistMicroService))

@@ -21,12 +21,14 @@ type NodeData struct {
 	core.NodeStatus `json:",inline"`
 	Name            string    `json:"name"`
 	UID             types.UID `json:"uid"`
+	ResourceVersion string    `json:"resourceVersion"`
 }
 
 func (updateNode *NodeData) UpdateNodeData(node *core.Node) {
 	updateNode.Name = node.ObjectMeta.Name
 	updateNode.NodeStatus = node.Status
 	updateNode.UID = node.ObjectMeta.UID
+	updateNode.ResourceVersion = node.ResourceVersion
 }
 
 func UpdateNode(node *core.Node, ndm map[int]*list.List) *NodeData {
@@ -130,9 +132,10 @@ func (wh *WatchHandler) handleNodeWatch(nodesWatcher watch.Interface, newStateCh
 					wh.ndm[id] = list.New()
 				}
 				nd := &NodeData{
-					UID:        node.ObjectMeta.UID,
-					Name:       node.ObjectMeta.Name,
-					NodeStatus: node.Status,
+					UID:             node.ObjectMeta.UID,
+					ResourceVersion: node.ResourceVersion,
+					Name:            node.ObjectMeta.Name,
+					NodeStatus:      node.Status,
 				}
 				wh.ndm[id].PushBack(nd)
 				informNewDataArrive(wh)
