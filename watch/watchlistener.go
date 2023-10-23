@@ -8,12 +8,18 @@ import (
 )
 
 func (wh *WatchHandler) ListenAndProcess(ctx context.Context, processor EventProcessor) {
+	wh.ListenAndProcessWithStartSignal(ctx, processor, make(chan struct{}))
+}
+
+func (wh *WatchHandler) ListenAndProcessWithStartSignal(ctx context.Context, processor EventProcessor, startSignal chan<- struct{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.L().Ctx(ctx).Error("RECOVER ListenAndProcess", helpers.Interface("error", err), helpers.String("stack", string(debug.Stack())))
 		}
 	}()
 	wh.SetFirstReportFlag(true)
+
+	close(startSignal)
 	for {
 		jsonData := prepareDataToSend(ctx, wh)
 		if jsonData == nil || isEmptyFirstReport(jsonData) {
