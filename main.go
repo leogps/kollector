@@ -4,16 +4,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/kubescape/backend/pkg/utils"
-	"github.com/leogps/kollector/config"
 	"net/url"
 	"os"
 
 	"github.com/kubescape/backend/pkg/servicediscovery"
 	v1 "github.com/kubescape/backend/pkg/servicediscovery/v1"
+	"github.com/kubescape/backend/pkg/utils"
 	logger "github.com/kubescape/go-logger"
 	"github.com/kubescape/go-logger/helpers"
 
+	"github.com/leogps/kollector/config"
 	"github.com/leogps/kollector/consts"
 	"github.com/leogps/kollector/watch"
 

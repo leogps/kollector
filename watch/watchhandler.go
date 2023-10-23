@@ -4,13 +4,13 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
-	"github.com/leogps/kollector/config"
-	"github.com/leogps/kollector/consts"
+	"net/url"
 	"os"
 	"sync"
 
 	"github.com/kubescape/k8s-interface/k8sinterface"
-
+	"github.com/leogps/kollector/config"
+	"github.com/leogps/kollector/consts"
 	restclient "k8s.io/client-go/rest"
 
 	beClientV1 "github.com/kubescape/backend/pkg/client/v1"
@@ -139,13 +139,18 @@ func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
 		return nil, fmt.Errorf("apiV1beta1client.NewForConfig failed: %s", err.Error())
 	}
 
-	erURL, err := beClientV1.GetReporterClusterReportsWebsocketUrl(config.EventReceiverWebsocketURL(), config.AccountID(), config.ClusterName())
-	if err != nil {
-		return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+	var erURL *url.URL
+	var websocketHandler *WebSocketHandler
+	if config.EventReceiverWebsocketURL() != "" {
+		erURL, err = beClientV1.GetReporterClusterReportsWebsocketUrl(config.EventReceiverWebsocketURL(), config.AccountID(), config.ClusterName())
+		if err != nil {
+			return nil, fmt.Errorf("failed to set event receiver url: %s", err.Error())
+		}
+		websocketHandler = createWebSocketHandler(erURL, config.AccessKey())
 	}
 
 	result := WatchHandler{RestAPIClient: k8sAPiObj.KubernetesClient,
-		WebSocketHandle:  createWebSocketHandler(erURL, config.AccessKey()),
+		WebSocketHandle:  websocketHandler,
 		extensionsClient: extensionsClientSet,
 		K8sApi:           k8sinterface.NewKubernetesApi(),
 		pdm:              make(map[int]*list.List),
