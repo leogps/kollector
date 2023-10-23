@@ -9,8 +9,8 @@ import (
 	"sync"
 
 	"github.com/kubescape/k8s-interface/k8sinterface"
-	"github.com/kubescape/kollector/config"
-	"github.com/kubescape/kollector/consts"
+	"github.com/leogps/kollector/config"
+	"github.com/leogps/kollector/consts"
 	restclient "k8s.io/client-go/rest"
 
 	beClientV1 "github.com/kubescape/backend/pkg/client/v1"

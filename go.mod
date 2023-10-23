@@ -1,4 +1,4 @@
-module github.com/kubescape/kollector
+module github.com/leogps/kollector
 
 go 1.20
 

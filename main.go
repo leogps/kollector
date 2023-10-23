@@ -13,9 +13,9 @@ import (
 	logger "github.com/kubescape/go-logger"
 	"github.com/kubescape/go-logger/helpers"
 
-	"github.com/kubescape/kollector/config"
-	"github.com/kubescape/kollector/consts"
-	"github.com/kubescape/kollector/watch"
+	"github.com/leogps/kollector/config"
+	"github.com/leogps/kollector/consts"
+	"github.com/leogps/kollector/watch"
 
 	"github.com/armosec/utils-k8s-go/armometadata"
 	"github.com/armosec/utils-k8s-go/probes"
