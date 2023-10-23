@@ -12,7 +12,6 @@ import (
 	"golang.org/x/net/context"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -88,12 +87,7 @@ func (wh *WatchHandler) NodeWatch(ctx context.Context) {
 	newStateChan := make(chan bool)
 	wh.newStateReportChans = append(wh.newStateReportChans, newStateChan)
 	for {
-		wh.clusterAPIServerVersion = wh.getClusterVersion()
-		wh.cloudVendor = wh.checkInstanceMetadataAPIVendor()
-		if wh.cloudVendor != "" {
-			wh.clusterAPIServerVersion.GitVersion += ";" + wh.cloudVendor
-		}
-		logger.L().Info("K8s Cloud Vendor", helpers.String("cloudVendor", wh.cloudVendor))
+		wh.RetrieveClusterInfo()
 		logger.L().Info("Watching over nodes starting")
 		nodesWatcher, err := wh.RestAPIClient.CoreV1().Nodes().Watch(globalHTTPContext, metav1.ListOptions{Watch: true})
 		if err != nil {
@@ -159,18 +153,4 @@ func (wh *WatchHandler) handleNodeWatch(nodesWatcher watch.Interface, newStateCh
 			return
 		}
 	}
-}
-
-func (wh *WatchHandler) checkInstanceMetadataAPIVendor() string {
-	res, _ := getInstanceMetadata()
-	return res
-}
-
-func (wh *WatchHandler) getClusterVersion() *version.Info {
-	serverVersion, err := wh.RestAPIClient.Discovery().ServerVersion()
-	if err != nil {
-		serverVersion = &version.Info{GitVersion: "Unknown"}
-	}
-	logger.L().Info("K8s API version", helpers.Interface("version", serverVersion))
-	return serverVersion
 }

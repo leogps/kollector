@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/kubescape/go-logger"
+	"github.com/kubescape/go-logger/helpers"
 	"net/url"
 	"os"
 	"sync"
@@ -120,6 +122,20 @@ type WatchHandler struct {
 	config config.IConfig
 
 	notifyUpdates iClusterNotifier // notify other (in-cluster) components about new data
+}
+
+func (wh *WatchHandler) CheckInstanceMetadataAPIVendor() string {
+	res, _ := getInstanceMetadata()
+	return res
+}
+
+func (wh *WatchHandler) ClusterVersion() *version.Info {
+	serverVersion, err := wh.RestAPIClient.Discovery().ServerVersion()
+	if err != nil {
+		serverVersion = &version.Info{GitVersion: "Unknown"}
+	}
+	logger.L().Info("K8s API version", helpers.Interface("version", serverVersion))
+	return serverVersion
 }
 
 func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
