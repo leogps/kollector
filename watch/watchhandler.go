@@ -4,6 +4,8 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/kubescape/go-logger"
+	"github.com/kubescape/go-logger/helpers"
 	"net/url"
 	"os"
 	"sync"
@@ -122,6 +124,20 @@ type WatchHandler struct {
 	notifyUpdates iClusterNotifier // notify other (in-cluster) components about new data
 }
 
+func (wh *WatchHandler) CheckInstanceMetadataAPIVendor() string {
+	res, _ := getInstanceMetadata()
+	return res
+}
+
+func (wh *WatchHandler) ClusterVersion() *version.Info {
+	serverVersion, err := wh.RestAPIClient.Discovery().ServerVersion()
+	if err != nil {
+		serverVersion = &version.Info{GitVersion: "Unknown"}
+	}
+	logger.L().Info("K8s API version", helpers.Interface("version", serverVersion))
+	return serverVersion
+}
+
 func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
 
 	componentNamespace := os.Getenv(consts.NamespaceEnvironmentVariable)
@@ -150,19 +166,17 @@ func CreateWatchHandler(config config.IConfig) (*WatchHandler, error) {
 	}
 
 	result := WatchHandler{RestAPIClient: k8sAPiObj.KubernetesClient,
-		WebSocketHandle:  websocketHandler,
-		extensionsClient: extensionsClientSet,
-		K8sApi:           k8sinterface.NewKubernetesApi(),
-		pdm:              make(map[int]*list.List),
-		ndm:              make(map[int]*list.List),
-		sdm:              make(map[int]*list.List),
-		cjm:              make(map[int]*list.List),
-		config:           config,
-		secretdm:         newResourceMap(),
-		namespacedm:      newResourceMap(),
-		jsonReport: jsonFormat{
-			FirstReport: true,
-		},
+		WebSocketHandle:        websocketHandler,
+		extensionsClient:       extensionsClientSet,
+		K8sApi:                 k8sinterface.NewKubernetesApi(),
+		pdm:                    make(map[int]*list.List),
+		ndm:                    make(map[int]*list.List),
+		sdm:                    make(map[int]*list.List),
+		cjm:                    make(map[int]*list.List),
+		config:                 config,
+		secretdm:               newResourceMap(),
+		namespacedm:            newResourceMap(),
+		jsonReport:             NewJsonFormat(),
 		informNewDataChannel:   make(chan int),
 		aggregateFirstDataFlag: true,
 		includeNamespaces:      []string{componentNamespace}, // ignore only the component namespace
