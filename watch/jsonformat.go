@@ -3,6 +3,8 @@ package watch
 import (
 	"context"
 	"encoding/json"
+	"github.com/google/uuid"
+	"sync"
 
 	"github.com/armosec/armoapi-go/armotypes"
 	"github.com/armosec/utils-k8s-go/armometadata"
@@ -34,10 +36,69 @@ var (
 	FirstReportEmptyLength = len(FirstReportEmptyBytes)
 )
 
+type EventObjectData struct {
+	sync.Map
+	ProcessedData []string `json:"-"`
+}
+
+func (e *EventObjectData) process() {
+	e.Range(func(key, value interface{}) bool {
+		e.ProcessedData = append(e.ProcessedData, key.(string))
+		return true
+	})
+}
+
+func (e *EventObjectData) deleteProcessed() {
+	for _, key := range e.ProcessedData {
+		e.Delete(key)
+	}
+}
+
+func (e *EventObjectData) MarshalJSON() ([]byte, error) {
+	var values []interface{}
+
+	e.Range(func(key, value interface{}) bool {
+		values = append(values, value)
+		return true
+	})
+
+	// Marshal the values to JSON
+	jsonData, err := json.Marshal(values)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
+}
+
+func NewEventObjectData() EventObjectData {
+	return EventObjectData{
+		Map:           sync.Map{},
+		ProcessedData: []string{},
+	}
+}
+
 type ObjectData struct {
-	Created []interface{} `json:"create,omitempty"`
-	Deleted []interface{} `json:"delete,omitempty"`
-	Updated []interface{} `json:"update,omitempty"`
+	Created EventObjectData `json:"create,omitempty"`
+	Deleted EventObjectData `json:"delete,omitempty"`
+	Updated EventObjectData `json:"update,omitempty"`
+}
+
+func (obj *ObjectData) process() {
+	if obj == nil {
+		return
+	}
+	obj.Created.process()
+	obj.Updated.process()
+	obj.Deleted.process()
+}
+
+func NewObjectData() *ObjectData {
+	return &ObjectData{
+		Created: NewEventObjectData(),
+		Deleted: NewEventObjectData(),
+		Updated: NewEventObjectData(),
+	}
 }
 
 type jsonFormat struct {
@@ -51,73 +112,87 @@ type jsonFormat struct {
 	Secret                  *ObjectData                 `json:"secret,omitempty"`
 	Namespace               *ObjectData                 `json:"namespace,omitempty"`
 	InstallationData        *armotypes.InstallationData `json:"installationData,omitempty"`
+	//sync.Mutex
+}
+
+func NewJsonFormat() jsonFormat {
+	return jsonFormat{
+		FirstReport:   true,
+		Nodes:         NewObjectData(),
+		Services:      NewObjectData(),
+		MicroServices: NewObjectData(),
+		Pods:          NewObjectData(),
+		Secret:        NewObjectData(),
+		Namespace:     NewObjectData(),
+	}
+}
+
+// Type alias for the recursive call
+type threadSafeJson jsonFormat
+
+func (jsonReport *jsonFormat) MarshalJSON() ([]byte, error) {
+	logger.L().Info("marshalling jsonReport now")
+
+	jsonReport.Nodes.process()
+	jsonReport.Services.process()
+	jsonReport.MicroServices.process()
+	jsonReport.Pods.process()
+	jsonReport.Secret.process()
+	jsonReport.Namespace.process()
+
+	return json.Marshal(threadSafeJson(*jsonReport))
 }
 
 func (obj *ObjectData) AddToJsonFormatByState(NewData interface{}, stype StateType) {
+	key := uuid.New().String()
 	switch stype {
 	case CREATED:
-		obj.Created = append(obj.Created, NewData)
+		obj.Created.Store(key, NewData)
 	case DELETED:
-		obj.Deleted = append(obj.Deleted, NewData)
+		obj.Deleted.Store(key, NewData)
 	case UPDATED:
-		obj.Updated = append(obj.Updated, NewData)
+		obj.Updated.Store(key, NewData)
 	}
-}
-
-func (obj *ObjectData) Len() int {
-	sum := 0
-	if obj == nil {
-		return sum
-	}
-	if obj.Created != nil {
-		sum += len(obj.Created)
-	}
-	if obj.Deleted != nil {
-		sum += len(obj.Deleted)
-	}
-	if obj.Updated != nil {
-		sum += len(obj.Updated)
-	}
-	return sum
 }
 
 func (jsonReport *jsonFormat) AddToJsonFormat(data interface{}, jtype JsonType, stype StateType) {
+
 	switch jtype {
 	case NODE:
 		if jsonReport.Nodes == nil {
-			jsonReport.Nodes = &ObjectData{}
+			jsonReport.Nodes = NewObjectData()
 		}
 		jsonReport.Nodes.AddToJsonFormatByState(data, stype)
 	case SERVICES:
 		if jsonReport.Services == nil {
-			jsonReport.Services = &ObjectData{}
+			jsonReport.Services = NewObjectData()
 		}
 		jsonReport.Services.AddToJsonFormatByState(data, stype)
 	case MICROSERVICES:
 		if jsonReport.MicroServices == nil {
-			jsonReport.MicroServices = &ObjectData{}
+			jsonReport.MicroServices = NewObjectData()
 		}
 		jsonReport.MicroServices.AddToJsonFormatByState(data, stype)
 	case PODS:
 		if jsonReport.Pods == nil {
-			jsonReport.Pods = &ObjectData{}
+			jsonReport.Pods = NewObjectData()
 		}
 		jsonReport.Pods.AddToJsonFormatByState(data, stype)
 	case SECRETS:
 		if jsonReport.Secret == nil {
-			jsonReport.Secret = &ObjectData{}
+			jsonReport.Secret = NewObjectData()
 		}
 		jsonReport.Secret.AddToJsonFormatByState(data, stype)
 	case NAMESPACES:
 		if jsonReport.Namespace == nil {
-			jsonReport.Namespace = &ObjectData{}
+			jsonReport.Namespace = NewObjectData()
 		}
 		jsonReport.Namespace.AddToJsonFormatByState(data, stype)
 	}
-
 }
 
 func prepareDataToSend(ctx context.Context, wh *WatchHandler) []byte {
+	logger.L().Ctx(ctx).Info("prepareDataToSend...")
 	jsonReport := wh.jsonReport
 	if wh.clusterAPIServerVersion == nil {
 		return nil
@@ -131,25 +206,10 @@ func prepareDataToSend(ctx context.Context, wh *WatchHandler) []byte {
 		jsonReport.ClusterAPIServerVersion = nil
 		jsonReport.CloudVendor = ""
 	}
-	if jsonReport.Nodes.Len() == 0 {
-		jsonReport.Nodes = nil
-	}
-	if jsonReport.Services.Len() == 0 {
-		jsonReport.Services = nil
-	}
-	if jsonReport.Secret.Len() == 0 {
-		jsonReport.Secret = nil
-	}
-	if jsonReport.Pods.Len() == 0 {
-		jsonReport.Pods = nil
-	}
-	if jsonReport.MicroServices.Len() == 0 {
-		jsonReport.MicroServices = nil
-	}
-	if jsonReport.Namespace.Len() == 0 {
-		jsonReport.Namespace = nil
-	}
-	jsonReportToSend, err := json.Marshal(jsonReport)
+
+	logger.L().Ctx(ctx).Info("Marshalling jsonReport...")
+	jsonReportToSend, err := json.Marshal(&jsonReport)
+
 	if nil != err {
 		logger.L().Ctx(ctx).Error("In PrepareDataToSend json.Marshal", helpers.Error(err))
 		return nil
@@ -182,8 +242,8 @@ func informNewDataArrive(wh *WatchHandler) {
 	}
 }
 
-func deleteObjectData(l *[]interface{}) {
-	*l = []interface{}{}
+func deleteObjectData(e *EventObjectData) {
+	e.deleteProcessed()
 }
 
 func deleteJsonData(wh *WatchHandler) {

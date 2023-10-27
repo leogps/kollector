@@ -8,10 +8,6 @@ import (
 )
 
 func (wh *WatchHandler) ListenAndProcess(ctx context.Context, processor EventProcessor) {
-	wh.ListenAndProcessWithStartSignal(ctx, processor, make(chan struct{}))
-}
-
-func (wh *WatchHandler) ListenAndProcessWithStartSignal(ctx context.Context, processor EventProcessor, startSignal chan<- struct{}) {
 	defer func() {
 		if err := recover(); err != nil {
 			logger.L().Ctx(ctx).Error("RECOVER ListenAndProcess", helpers.Interface("error", err), helpers.String("stack", string(debug.Stack())))
@@ -19,14 +15,14 @@ func (wh *WatchHandler) ListenAndProcessWithStartSignal(ctx context.Context, pro
 	}()
 	wh.SetFirstReportFlag(true)
 
-	close(startSignal)
 	for {
+		logger.L().Ctx(ctx).Info("for loop...")
 		jsonData := prepareDataToSend(ctx, wh)
 		if jsonData == nil || isEmptyFirstReport(jsonData) {
 			continue // skip (usually first) report in case it is empty
 		}
 		if jsonData != nil {
-			logger.L().Ctx(ctx).Debug("sending report to websocket", helpers.String("report", string(jsonData)))
+			logger.L().Ctx(ctx).Debug("processing report", helpers.String("report", string(jsonData)))
 			processor.ProcessEventData(jsonData)
 		}
 		if wh.getFirstReportFlag() {

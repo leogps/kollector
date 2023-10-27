@@ -70,16 +70,16 @@ func (wh *WatchHandler) NamespaceEventHandler(ctx context.Context, event *watch.
 			id := CreateID()
 			wh.namespacedm.init(id)
 			wh.namespacedm.pushBack(id, namespace)
-			informNewDataArrive(wh)
 			wh.jsonReport.AddToJsonFormat(namespace, NAMESPACES, CREATED)
+			informNewDataArrive(wh)
 		case watch.Modified:
 			wh.UpdateNamespace(namespace)
-			informNewDataArrive(wh)
 			wh.jsonReport.AddToJsonFormat(namespace, NAMESPACES, UPDATED)
+			informNewDataArrive(wh)
 		case watch.Deleted:
 			wh.RemoveNamespace(namespace)
-			informNewDataArrive(wh)
 			wh.jsonReport.AddToJsonFormat(namespace, NAMESPACES, DELETED)
+			informNewDataArrive(wh)
 		case watch.Bookmark: //only the resource version is changed but it's the same object
 			return nil
 		case watch.Error:
