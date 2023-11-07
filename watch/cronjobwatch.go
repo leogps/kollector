@@ -35,6 +35,11 @@ func (wh *WatchHandler) CronJobWatch(ctx context.Context) {
 		wh.handleCronJobWatch(ctx, cronjobWatcher, newStateChan, &lastWatchEventCreationTime)
 
 		logger.L().Info("Watching over cronjobs ended - since we got timeout")
+
+		if wh.cancelled {
+			logger.L().Info("Watching over cronjobs cancelled")
+			break
+		}
 	}
 }
 

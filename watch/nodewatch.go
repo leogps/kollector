@@ -96,6 +96,10 @@ func (wh *WatchHandler) NodeWatch(ctx context.Context) {
 		}
 		wh.handleNodeWatch(nodesWatcher, newStateChan, &lastWatchEventCreationTime)
 
+		if wh.cancelled {
+			logger.L().Info("Watching over nodes cancelled")
+			break
+		}
 	}
 }
 func (wh *WatchHandler) handleNodeWatch(nodesWatcher watch.Interface, newStateChan <-chan bool, lastWatchEventCreationTime *time.Time) {

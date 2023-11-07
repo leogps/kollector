@@ -90,6 +90,11 @@ func (wh *WatchHandler) PodWatch(ctx context.Context) {
 			continue
 		}
 		wh.handlePodWatch(ctx, podsWatcher, newStateChan, &lastWatchEventCreationTime)
+
+		if wh.cancelled {
+			logger.L().Info("Watching over pods cancelled")
+			break
+		}
 	}
 }
 func isPodAlreadyExistInScanCandidateList(ctx context.Context, od *OwnerDet, pod *core.Pod) (bool, int) {

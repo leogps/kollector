@@ -131,7 +131,7 @@ func NewJsonFormat() jsonFormat {
 type threadSafeJson jsonFormat
 
 func (jsonReport *jsonFormat) MarshalJSON() ([]byte, error) {
-	logger.L().Info("marshalling jsonReport now")
+	//logger.L().Info("marshalling jsonReport now")
 
 	jsonReport.Nodes.process()
 	jsonReport.Services.process()
@@ -192,7 +192,7 @@ func (jsonReport *jsonFormat) AddToJsonFormat(data interface{}, jtype JsonType, 
 }
 
 func prepareDataToSend(ctx context.Context, wh *WatchHandler) []byte {
-	logger.L().Ctx(ctx).Info("prepareDataToSend...")
+	//logger.L().Ctx(ctx).Info("prepareDataToSend...")
 	jsonReport := wh.jsonReport
 	if wh.clusterAPIServerVersion == nil {
 		return nil
@@ -207,7 +207,7 @@ func prepareDataToSend(ctx context.Context, wh *WatchHandler) []byte {
 		jsonReport.CloudVendor = ""
 	}
 
-	logger.L().Ctx(ctx).Info("Marshalling jsonReport...")
+	//logger.L().Ctx(ctx).Info("Marshalling jsonReport...")
 	jsonReportToSend, err := json.Marshal(&jsonReport)
 
 	if nil != err {

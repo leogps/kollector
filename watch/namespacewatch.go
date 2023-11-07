@@ -56,6 +56,11 @@ WatchLoop:
 		}
 		lastWatchEventCreationTime = time.Now()
 		logger.L().Debug("Watching over namespaces ended - timeout")
+
+		if wh.cancelled {
+			logger.L().Info("Watching over namespaces cancelled")
+			break
+		}
 	}
 }
 func (wh *WatchHandler) NamespaceEventHandler(ctx context.Context, event *watch.Event, lastWatchEventCreationTime time.Time) error {

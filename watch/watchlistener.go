@@ -16,7 +16,7 @@ func (wh *WatchHandler) ListenAndProcess(ctx context.Context, processor EventPro
 	wh.SetFirstReportFlag(true)
 
 	for {
-		logger.L().Ctx(ctx).Info("for loop...")
+		//logger.L().Ctx(ctx).Info("for loop...")
 		jsonData := prepareDataToSend(ctx, wh)
 		if jsonData == nil || isEmptyFirstReport(jsonData) {
 			continue // skip (usually first) report in case it is empty
@@ -29,6 +29,10 @@ func (wh *WatchHandler) ListenAndProcess(ctx context.Context, processor EventPro
 			wh.SetFirstReportFlag(false)
 		}
 		if WaitTillNewDataArrived(wh) {
+			if wh.cancelled {
+				logger.L().Info("Listener cancelled")
+				return
+			}
 			continue
 		}
 	}

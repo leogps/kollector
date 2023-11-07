@@ -122,6 +122,7 @@ type WatchHandler struct {
 	config config.IConfig
 
 	notifyUpdates iClusterNotifier // notify other (in-cluster) components about new data
+	cancelled     bool
 }
 
 func (wh *WatchHandler) CheckInstanceMetadataAPIVendor() string {

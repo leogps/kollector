@@ -58,6 +58,11 @@ WatchLoop:
 			}
 		}
 		lastWatchEventCreationTime = time.Now()
+
+		if wh.cancelled {
+			logger.L().Info("Watching over secrets cancelled")
+			break
+		}
 	}
 }
 func (wh *WatchHandler) secretEventHandler(event *watch.Event, lastWatchEventCreationTime time.Time) error {

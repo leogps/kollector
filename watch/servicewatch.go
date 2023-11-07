@@ -37,6 +37,11 @@ func (wh *WatchHandler) ServiceWatch(ctx context.Context) {
 			continue
 		}
 		wh.handleServiceWatch(serviceWatcher, newStateChan, &lastWatchEventCreationTime)
+
+		if wh.cancelled {
+			logger.L().Info("Watching over services cancelled")
+			break
+		}
 	}
 }
 func updateService(service *core.Service, sdm map[int]*list.List) string {

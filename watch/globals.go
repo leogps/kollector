@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	globalHTTPContext = context.Background()
+	globalHTTPContext, globalHTTPContextCancelFunc = context.WithCancel(context.Background())
 )
